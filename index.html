@@ -7,6 +7,9 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
     <style>
+        * {
+            box-sizing: border-box;
+        }
         body {
             font-family: 'Comic Neue', cursive;
             text-align: center;
@@ -15,16 +18,42 @@
             margin: 0;
             padding: 20px;
             background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.2'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .container {
             max-width: 650px;
-            margin: auto;
+            width: calc(100% - 20px);
             background: #fff;
-            padding: 25px;
+            padding: 20px;
             border-radius: 20px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3), 0 0 0 8px #ffcc00;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4), 0 0 0 8px #ffcc00;
             border: 4px solid #333;
             position: relative;
+            margin: 10px;
+            overflow: hidden;
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+                border-radius: 15px;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4), 0 0 0 5px #ffcc00;
+                border: 3px solid #333;
+            }
+        }
+        .container:before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #ffcc00;
+            width: 80px;
+            height: 80px;
+            transform: rotate(45deg);
+            z-index: 0;
         }
         h1 {
             font-family: 'Bangers', cursive;
@@ -33,16 +62,53 @@
             text-shadow: 3px 3px 0 #333;
             margin-top: 10px;
             letter-spacing: 2px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 2.2em;
+                margin-top: 5px;
+                text-shadow: 2px 2px 0 #333;
+            }
+        }
+        h1:after {
+            content: "SLAP";
+            position: absolute;
+            left: 50%;
+            top: -10px;
+            transform: translateX(-50%);
+            font-size: 4em;
+            opacity: 0.04;
+            z-index: -1;
+            letter-spacing: 10px;
+            width: 100%;
         }
         .controls {
             display: flex;
+            flex-wrap: wrap;
             justify-content: center;
             align-items: center;
             margin: 20px 0;
-            background: #f2f2f2;
+            background: linear-gradient(to bottom, #f8f8f8, #e8e8e8);
             padding: 15px;
             border-radius: 15px;
             border: 3px solid #333;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+            gap: 10px;
+        }
+        
+        @media (max-width: 600px) {
+            .controls {
+                flex-direction: column;
+            }
+            
+            .draw-button {
+                margin-left: 0;
+                margin-top: 10px;
+                width: 100%;
+            }
         }
         label {
             font-size: 1.4em;
@@ -65,10 +131,30 @@
             margin: 0 10px;
             box-shadow: 0 4px 0 #2E7D32;
             transition: all 0.1s;
+            -webkit-tap-highlight-color: transparent;
         }
         .draw-btn:active {
             transform: translateY(4px);
             box-shadow: 0 0 0 #2E7D32;
+        }
+        
+        @media (max-width: 480px) {
+            .draw-btn {
+                width: 36px;
+                height: 36px;
+                font-size: 1.3em;
+                margin: 0 5px;
+            }
+            
+            input {
+                width: 50px;
+                font-size: 1.3em;
+                padding: 3px;
+            }
+            
+            label {
+                font-size: 1.2em;
+            }
         }
         input {
             width: 60px;
@@ -80,25 +166,49 @@
             background: white;
         }
         .draw-button {
-            background-color: #ff5722;
+            background: linear-gradient(to bottom, #ff5722, #e64a19);
             color: white;
             cursor: pointer;
             font-size: 1.5em;
             padding: 12px 30px;
             border: none;
             border-radius: 12px;
-            box-shadow: 0 6px 0 #d84315;
+            box-shadow: 0 6px 0 #bf360c, 0 8px 10px rgba(0,0,0,0.2);
             transition: all 0.1s;
             font-family: 'Bangers', cursive;
             letter-spacing: 1px;
             margin-left: 20px;
+            position: relative;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .draw-button:after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            background: rgba(255,255,255,0.1);
+            border-bottom-right-radius: 50%;
+            border-bottom-left-radius: 50%;
         }
         .draw-button:active {
             transform: translateY(6px);
             box-shadow: 0 0 0 #d84315;
         }
         .draw-button:hover {
-            background-color: #ff7043;
+            background: linear-gradient(to bottom, #ff7043, #ff5722);
+        }
+        
+        @media (max-width: 480px) {
+            .draw-button {
+                font-size: 1.3em;
+                padding: 10px 20px;
+                margin-left: 0;
+                width: 100%;
+                max-width: 250px;
+            }
         }
         .cards-container {
             display: flex;
@@ -117,7 +227,7 @@
             align-items: center;
             justify-content: center;
             font-size: 1.8em;
-            margin: 10px;
+            margin: 8px;
             border-radius: 15px;
             border: 3px solid #333;
             box-shadow: 0 8px 8px rgba(0, 0, 0, 0.2);
@@ -128,6 +238,31 @@
             transition: all 0.3s;
             background-image: linear-gradient(to bottom right, #ffffff 0%, #f8f8f8 40%, #e9e9e9 100%);
             overflow: hidden;
+        }
+        
+        @media (max-width: 480px) {
+            .card {
+                width: 70px;
+                height: 100px;
+                font-size: 1.4em;
+                margin: 5px;
+                border-radius: 10px;
+                border-width: 2px;
+            }
+            
+            .card-value {
+                font-size: 1.6em !important;
+            }
+            
+            .card-suit {
+                font-size: 1.8em !important;
+                margin-top: 2px !important;
+            }
+            
+            .joker:after {
+                font-size: 0.5em !important;
+                bottom: 5px !important;
+            }
         }
         .card:before {
             content: '';
@@ -140,9 +275,20 @@
             border-radius: 50%;
             z-index: 1;
         }
+        .card:after {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            right: 5px;
+            bottom: 5px;
+            border: 1px solid rgba(0,0,0,0.05);
+            border-radius: 10px;
+            pointer-events: none;
+        }
         .card:hover {
             transform: scale(1.05) rotate(0deg) translateY(-5px) !important;
-            box-shadow: 0 12px 12px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 15px 15px rgba(0, 0, 0, 0.3);
         }
         .card-value {
             font-size: 2em;
@@ -177,17 +323,74 @@
             font-size: 2em;
             margin-top: 30px;
             padding: 15px;
-            background: #333;
+            background: linear-gradient(to right, #333, #444);
             color: white;
             border-radius: 12px;
             font-family: 'Bangers', cursive;
             letter-spacing: 1px;
             box-shadow: 0 4px 0 #111;
+            position: relative;
+            overflow: hidden;
+        }
+        .result:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -50%;
+            width: 30%;
+            height: 100%;
+            background: rgba(255,255,255,0.1);
+            transform: skewX(-30deg);
+            pointer-events: none;
+        }
+        .successes-breakdown {
+            display: flex;
+            justify-content: center;
+            margin-top: 15px;
+            gap: 20px;
+        }
+        .breakdown-item {
+            background: rgba(255,255,255,0.1);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-family: 'Comic Neue', cursive;
+            font-size: 0.6em;
+            display: flex;
+            align-items: center;
+        }
+        .breakdown-item.values { color: #ffcc00; }
+        .breakdown-item.suits { color: #4CAF50; }
+        
+        @media (max-width: 480px) {
+            .result {
+                font-size: 1.6em;
+                margin-top: 20px;
+                padding: 10px;
+            }
+            
+            .successes-breakdown {
+                flex-direction: column;
+                gap: 5px;
+                margin-top: 10px;
+            }
+            
+            .breakdown-item {
+                width: 80%;
+                margin: 0 auto;
+            }
         }
         @keyframes drawAnimation {
             0% { transform: scale(0) rotate(-10deg); opacity: 0; }
             60% { transform: scale(1.1) rotate(5deg); opacity: 1; }
             100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        
+        @media (max-width: 480px) {
+            @keyframes drawAnimation {
+                0% { transform: scale(0) rotate(-10deg); opacity: 0; }
+                60% { transform: scale(1.05) rotate(5deg); opacity: 1; }
+                100% { transform: scale(1) rotate(0deg); opacity: 1; }
+            }
         }
         @keyframes jokerAnimation {
             0% { transform: scale(0) rotate(10deg); opacity: 0; }
@@ -219,6 +422,45 @@
             0% { transform: scale(0); opacity: 0; }
             50% { transform: scale(1.5); opacity: 1; }
             100% { transform: scale(2); opacity: 0; }
+        }
+        
+        /* Additional touch-specific styles */
+        .touch-active {
+            opacity: 0.8;
+            transform: scale(0.95);
+        }
+        
+        /* Prevent text selection */
+        * {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        /* Fix for mobile Safari issues */
+        @supports (-webkit-touch-callout: none) {
+            .card, .draw-button, .draw-btn {
+                -webkit-transform: translateZ(0);
+            }
+        }
+        
+        /* Optimize for smaller screens */
+        @media (max-width: 350px) {
+            .card {
+                width: 60px;
+                height: 85px;
+                font-size: 1.2em;
+                margin: 4px;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+            
+            .result {
+                font-size: 1.4em;
+            }
         }
     </style>
 </head>
@@ -378,11 +620,8 @@
                     else if (newValue === 'A') numValue = 14;
                     else numValue = parseInt(newValue);
                     
+                    // Update the drawn cards array with the new card
                     drawnCards[index] = { value: newValue, suit: newSuit, numValue: numValue };
-                    
-                    // Create new card element (instead of modifying the existing one)
-                    let newCard = document.createElement("div");
-                    newCard.classList.add("card", "replaced");
                     
                     // Update card appearance with animation
                     jokerCard.style.transform = "scale(0.8) rotate(10deg)";
@@ -452,13 +691,15 @@
         }
 
         function calculateSuccesses(drawnCards) {
+            // Create separate counters
             let valueCounts = {};
             let suitCounts = {};
-            let successes = 0;
             
-            // For debugging
-            console.log("Calculating successes for:", drawnCards);
+            // Track individual matches
+            let valueMatches = 0;
+            let suitMatches = 0;
             
+            // First just count occurrences
             drawnCards.forEach(card => {
                 if (card.value !== 'Joker') {
                     // Use numeric value for calculation
@@ -468,25 +709,24 @@
                 }
             });
             
-            // Log the counts for debugging
-            console.log("Value counts:", valueCounts);
-            console.log("Suit counts:", suitCounts);
-            
-            // We moved this counting logic to the results section for better breakdown display
-            
-            let valueMatches = 0;
-            let suitMatches = 0;
-            
-            // Count value matches
-            Object.values(valueCounts).forEach(count => {
+            // Calculate value matches (separate calculation)
+            Object.entries(valueCounts).forEach(([value, count]) => {
+                // Skip single cards
+                if (count < 2) return;
+                
+                // Calculate successes based on count
                 if (count === 2) valueMatches += 1;
                 if (count === 3) valueMatches += 2;
                 if (count === 4) valueMatches += 3;
                 if (count === 5) valueMatches += 4;
             });
             
-            // Count suit matches
-            Object.values(suitCounts).forEach(count => {
+            // Calculate suit matches (separate calculation)
+            Object.entries(suitCounts).forEach(([suit, count]) => {
+                // Skip single cards
+                if (count < 2) return;
+                
+                // Calculate successes based on count
                 if (count === 2) suitMatches += 1;
                 if (count === 3) suitMatches += 2;
                 if (count === 4) suitMatches += 3;
@@ -494,8 +734,9 @@
             });
             
             // Total successes
-            successes = valueMatches + suitMatches;
+            let successes = valueMatches + suitMatches;
             
+            // Create result message
             let message = "";
             if (successes === 0) {
                 message = "No successes. Try again!";
@@ -509,10 +750,18 @@
                 message = `${successes} successes! Amazing luck!`;
             }
             
-            // Add breakdown of where successes came from
-            message += `<br><span style="font-size: 0.7em;">(${valueMatches} from values, ${suitMatches} from suits)</span>`;
-            
-            document.getElementById("result").innerHTML = message;
+            // Display detailed breakdown with enhanced UI
+            document.getElementById("result").innerHTML = `
+                <div>${message}</div>
+                <div class="successes-breakdown">
+                    <div class="breakdown-item values">
+                        <span>${valueMatches} from values</span>
+                    </div>
+                    <div class="breakdown-item suits">
+                        <span>${suitMatches} from suits</span>
+                    </div>
+                </div>
+            `;
         }
     </script>
 </body>
