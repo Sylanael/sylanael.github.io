@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SLAP Draws Calculator</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body {
             font-family: 'Poppins', sans-serif;
@@ -119,10 +120,6 @@
         function calculateSuccess() {
             let draws = parseInt(document.getElementById("draws").value);
             let drawnCards = drawCards(draws);
-            let valueCounts = {};
-            let suitCounts = {};
-            let successes = 0;
-            
             document.getElementById("cardsContainer").innerHTML = "";
             drawnCards.forEach((card, index) => {
                 setTimeout(() => {
@@ -138,48 +135,59 @@
                     document.getElementById("cardsContainer").appendChild(cardDiv);
                 }, index * 200);
             });
-            
             calculateSuccesses(drawnCards);
         }
         
+        function replaceJoker(jokerCard, drawnCards, index) {
+            Swal.fire({
+                title: 'Replace Joker',
+                html: `
+                    <label>Select Suit:</label>
+                    <select id="suit">
+                        <option value="♠️">♠️ Spades</option>
+                        <option value="♦️">♦️ Diamonds</option>
+                        <option value="♣️">♣️ Clubs</option>
+                        <option value="♥️">♥️ Hearts</option>
+                    </select>
+                    <br><br>
+                    <label>Select Value:</label>
+                    <select id="value">
+                        ${Array.from({ length: 13 }, (_, i) => `<option value="${i + 2}">${i + 2}</option>`).join('')}
+                    </select>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Replace'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    let newValue = document.getElementById("value").value;
+                    let newSuit = document.getElementById("suit").value;
+                    drawnCards[index] = { value: parseInt(newValue), suit: newSuit };
+                    jokerCard.classList.remove("joker");
+                    jokerCard.innerHTML = `${newSuit} ${newValue}`;
+                    calculateSuccesses(drawnCards);
+                }
+            });
+        }
+
         function calculateSuccesses(drawnCards) {
             let valueCounts = {};
             let suitCounts = {};
             let successes = 0;
-            
             drawnCards.forEach(card => {
                 if (card.value !== 'Joker') {
                     valueCounts[card.value] = (valueCounts[card.value] || 0) + 1;
                     suitCounts[card.suit] = (suitCounts[card.suit] || 0) + 1;
                 }
             });
-            
             Object.values(valueCounts).forEach(count => {
                 if (count === 2) successes += 1;
                 if (count === 3) successes += 2;
                 if (count === 4) successes += 3;
                 if (count === 5) successes += 4;
             });
-            
-            Object.values(suitCounts).forEach(count => {
-                if (count > 1) successes += Math.floor(count / 2);
-            });
-            
             setTimeout(() => {
-                document.getElementById("result").innerHTML = `
-                    <strong>Successes:</strong> ${successes}`;
+                document.getElementById("result").innerHTML = `<strong>Successes:</strong> ${successes}`;
             }, drawnCards.length * 200);
-        }
-        
-        function replaceJoker(jokerCard, drawnCards, index) {
-            let newValue = prompt("Enter replacement value (2-14):");
-            let newSuit = prompt("Enter replacement suit (♠️, ♦️, ♣️, ♥️):");
-            if (newValue && newSuit) {
-                drawnCards[index] = { value: parseInt(newValue), suit: newSuit };
-                jokerCard.classList.remove("joker");
-                jokerCard.innerHTML = `${newSuit} ${newValue}`;
-                calculateSuccesses(drawnCards);
-            }
         }
     </script>
 </body>
