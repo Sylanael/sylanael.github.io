@@ -126,6 +126,19 @@
             cursor: pointer;
             position: relative;
             transition: all 0.3s;
+            background-image: linear-gradient(to bottom right, #ffffff 0%, #f8f8f8 40%, #e9e9e9 100%);
+            overflow: hidden;
+        }
+        .card:before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            z-index: 1;
         }
         .card:hover {
             transform: scale(1.05) rotate(0deg) translateY(-5px) !important;
@@ -144,15 +157,21 @@
             color: white;
             font-weight: bold;
             transform: scale(0) rotate(10deg);
+            border: 3px dashed #333;
+            animation: pulse 1.5s infinite alternate ease-in-out;
         }
         .joker:after {
-            content: "WILD!";
+            content: "CLICK TO REPLACE!";
             position: absolute;
             bottom: 10px;
             font-family: 'Bangers', cursive;
-            font-size: 0.7em;
+            font-size: 0.6em;
             color: white;
             text-shadow: 1px 1px 0 #333;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 5px 2px rgba(255, 255, 255, 0.7), 0 8px 8px rgba(0, 0, 0, 0.2); }
+            100% { box-shadow: 0 0 15px 5px rgba(255, 215, 0, 0.9), 0 8px 8px rgba(0, 0, 0, 0.2); }
         }
         .result {
             font-size: 2em;
@@ -176,7 +195,7 @@
             100% { transform: scale(1) rotate(0deg); opacity: 1; }
         }
         @keyframes replaceAnimation {
-            0% { transform: scale(1); }
+            0% { transform: scale(0); }
             50% { transform: scale(1.2) rotate(5deg); }
             100% { transform: scale(1); }
         }
@@ -361,28 +380,57 @@
                     
                     drawnCards[index] = { value: newValue, suit: newSuit, numValue: numValue };
                     
-                    // Update card
-                    jokerCard.classList.remove("joker");
-                    jokerCard.classList.add("replaced");
-                    jokerCard.innerHTML = '';
+                    // Create new card element (instead of modifying the existing one)
+                    let newCard = document.createElement("div");
+                    newCard.classList.add("card", "replaced");
                     
-                    let cardValueDiv = document.createElement("div");
-                    cardValueDiv.classList.add("card-value");
+                    // Create a temporary placeholder to maintain position
+                    let tempPlaceholder = document.createElement("div");
+                    tempPlaceholder.style.width = "90px";
+                    tempPlaceholder.style.height = "0";
+                    tempPlaceholder.style.margin = "10px";
+                    tempPlaceholder.style.padding = "0";
+                    tempPlaceholder.style.transition = "all 0.3s";
                     
-                    let cardSuitDiv = document.createElement("div");
-                    cardSuitDiv.classList.add("card-suit");
+                    // Temporarily hide joker with animation
+                    jokerCard.style.transform = "scale(0) rotate(180deg)";
+                    jokerCard.style.opacity = "0";
                     
-                    // Set color for red suits
-                    if (newSuit === '♦️' || newSuit === '♥️') {
-                        cardValueDiv.style.color = "#ff5722";
-                        cardSuitDiv.style.color = "#ff5722";
-                    }
-                    
-                    cardValueDiv.innerHTML = newValue;
-                    cardSuitDiv.innerHTML = newSuit;
-                    
-                    jokerCard.appendChild(cardValueDiv);
-                    jokerCard.appendChild(cardSuitDiv);
+                    // Replace the joker with placeholder
+                    setTimeout(() => {
+                        jokerCard.parentNode.replaceChild(tempPlaceholder, jokerCard);
+                        
+                        // Then replace placeholder with new card
+                        setTimeout(() => {
+                            let cardValueDiv = document.createElement("div");
+                            cardValueDiv.classList.add("card-value");
+                            
+                            let cardSuitDiv = document.createElement("div");
+                            cardSuitDiv.classList.add("card-suit");
+                            
+                            // Set color for red suits
+                            if (newSuit === '♦️' || newSuit === '♥️') {
+                                cardValueDiv.style.color = "#ff5722";
+                                cardSuitDiv.style.color = "#ff5722";
+                            }
+                            
+                            cardValueDiv.innerHTML = newValue;
+                            cardSuitDiv.innerHTML = newSuit;
+                            
+                            newCard.appendChild(cardValueDiv);
+                            newCard.appendChild(cardSuitDiv);
+                            
+                            tempPlaceholder.parentNode.replaceChild(newCard, tempPlaceholder);
+                            
+                            // Add highlight effect for new card
+                            newCard.style.boxShadow = "0 0 20px 5px gold";
+                            newCard.style.animation = "replaceAnimation 0.5s";
+                            
+                            setTimeout(() => {
+                                newCard.style.boxShadow = "";
+                            }, 1500);
+                        }, 100);
+                    }, 300);
                     
                     // Add boom effect
                     const boom = document.createElement("div");
@@ -390,11 +438,15 @@
                     boom.textContent = "POW!";
                     boom.style.left = Math.random() * 60 - 30 + "px";
                     boom.style.top = Math.random() * 60 - 30 + "px";
-                    jokerCard.appendChild(boom);
+                    document.querySelector(".cards-container").appendChild(boom);
+                    boom.style.position = "absolute";
+                    boom.style.left = (jokerCard.offsetLeft + 45) + "px";
+                    boom.style.top = (jokerCard.offsetTop + 65) + "px";
+                    boom.style.zIndex = "100";
                     
                     setTimeout(() => {
                         boom.classList.add("show");
-                    }, 50);
+                    }, 300);
                     
                     calculateSuccesses(drawnCards);
                 }
