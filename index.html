@@ -384,53 +384,51 @@
                     let newCard = document.createElement("div");
                     newCard.classList.add("card", "replaced");
                     
-                    // Create a temporary placeholder to maintain position
-                    let tempPlaceholder = document.createElement("div");
-                    tempPlaceholder.style.width = "90px";
-                    tempPlaceholder.style.height = "0";
-                    tempPlaceholder.style.margin = "10px";
-                    tempPlaceholder.style.padding = "0";
-                    tempPlaceholder.style.transition = "all 0.3s";
+                    // Update card appearance with animation
+                    jokerCard.style.transform = "scale(0.8) rotate(10deg)";
+                    jokerCard.style.opacity = "0.5";
                     
-                    // Temporarily hide joker with animation
-                    jokerCard.style.transform = "scale(0) rotate(180deg)";
-                    jokerCard.style.opacity = "0";
-                    
-                    // Replace the joker with placeholder
                     setTimeout(() => {
-                        jokerCard.parentNode.replaceChild(tempPlaceholder, jokerCard);
+                        // Remove joker styling
+                        jokerCard.classList.remove("joker");
+                        jokerCard.classList.add("replaced");
+                        jokerCard.innerHTML = "";
                         
-                        // Then replace placeholder with new card
+                        // Create the new card contents
+                        let cardValueDiv = document.createElement("div");
+                        cardValueDiv.classList.add("card-value");
+                        
+                        let cardSuitDiv = document.createElement("div");
+                        cardSuitDiv.classList.add("card-suit");
+                        
+                        // Set color for red suits
+                        if (newSuit === '♦️' || newSuit === '♥️') {
+                            cardValueDiv.style.color = "#ff5722";
+                            cardSuitDiv.style.color = "#ff5722";
+                        }
+                        
+                        cardValueDiv.innerHTML = newValue;
+                        cardSuitDiv.innerHTML = newSuit;
+                        
+                        // Add the new contents to the card
+                        jokerCard.appendChild(cardValueDiv);
+                        jokerCard.appendChild(cardSuitDiv);
+                        
+                        // Reset and animate the card
+                        jokerCard.style.opacity = "1";
+                        jokerCard.style.transform = "scale(1.2) rotate(0deg)";
+                        jokerCard.style.boxShadow = "0 0 20px 5px gold";
+                        
+                        // Return to normal size after the animation
                         setTimeout(() => {
-                            let cardValueDiv = document.createElement("div");
-                            cardValueDiv.classList.add("card-value");
+                            jokerCard.style.transform = "scale(1) rotate(0deg)";
                             
-                            let cardSuitDiv = document.createElement("div");
-                            cardSuitDiv.classList.add("card-suit");
-                            
-                            // Set color for red suits
-                            if (newSuit === '♦️' || newSuit === '♥️') {
-                                cardValueDiv.style.color = "#ff5722";
-                                cardSuitDiv.style.color = "#ff5722";
-                            }
-                            
-                            cardValueDiv.innerHTML = newValue;
-                            cardSuitDiv.innerHTML = newSuit;
-                            
-                            newCard.appendChild(cardValueDiv);
-                            newCard.appendChild(cardSuitDiv);
-                            
-                            tempPlaceholder.parentNode.replaceChild(newCard, tempPlaceholder);
-                            
-                            // Add highlight effect for new card
-                            newCard.style.boxShadow = "0 0 20px 5px gold";
-                            newCard.style.animation = "replaceAnimation 0.5s";
-                            
+                            // Remove highlight after a delay
                             setTimeout(() => {
-                                newCard.style.boxShadow = "";
-                            }, 1500);
-                        }, 100);
-                    }, 300);
+                                jokerCard.style.boxShadow = "";
+                            }, 1000);
+                        }, 300);
+                    }, 200);
                     
                     // Add boom effect
                     const boom = document.createElement("div");
@@ -458,6 +456,9 @@
             let suitCounts = {};
             let successes = 0;
             
+            // For debugging
+            console.log("Calculating successes for:", drawnCards);
+            
             drawnCards.forEach(card => {
                 if (card.value !== 'Joker') {
                     // Use numeric value for calculation
@@ -467,12 +468,33 @@
                 }
             });
             
+            // Log the counts for debugging
+            console.log("Value counts:", valueCounts);
+            console.log("Suit counts:", suitCounts);
+            
+            // We moved this counting logic to the results section for better breakdown display
+            
+            let valueMatches = 0;
+            let suitMatches = 0;
+            
+            // Count value matches
             Object.values(valueCounts).forEach(count => {
-                if (count === 2) successes += 1;
-                if (count === 3) successes += 2;
-                if (count === 4) successes += 3;
-                if (count === 5) successes += 4;
+                if (count === 2) valueMatches += 1;
+                if (count === 3) valueMatches += 2;
+                if (count === 4) valueMatches += 3;
+                if (count === 5) valueMatches += 4;
             });
+            
+            // Count suit matches
+            Object.values(suitCounts).forEach(count => {
+                if (count === 2) suitMatches += 1;
+                if (count === 3) suitMatches += 2;
+                if (count === 4) suitMatches += 3;
+                if (count === 5) suitMatches += 4;
+            });
+            
+            // Total successes
+            successes = valueMatches + suitMatches;
             
             let message = "";
             if (successes === 0) {
@@ -486,6 +508,9 @@
             } else {
                 message = `${successes} successes! Amazing luck!`;
             }
+            
+            // Add breakdown of where successes came from
+            message += `<br><span style="font-size: 0.7em;">(${valueMatches} from values, ${suitMatches} from suits)</span>`;
             
             document.getElementById("result").innerHTML = message;
         }
