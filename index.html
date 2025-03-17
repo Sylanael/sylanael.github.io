@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SLAP Draws Calculator</title>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
@@ -73,6 +73,18 @@
                 text-shadow: 2px 2px 0 #333;
             }
         }
+        h1:after {
+            content: "SLAP";
+            position: absolute;
+            left: 50%;
+            top: -10px;
+            transform: translateX(-50%);
+            font-size: 4em;
+            opacity: 0.04;
+            z-index: -1;
+            letter-spacing: 10px;
+            width: 100%;
+        }
         .controls {
             display: flex;
             flex-wrap: wrap;
@@ -85,6 +97,37 @@
             border: 3px solid #333;
             box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
             gap: 10px;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            justify-content: center;
+            margin: 15px 0;
+            gap: 20px;
+        }
+        
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            font-size: 1.2em;
+            cursor: pointer;
+            padding: 5px 15px;
+            background: linear-gradient(to bottom, #f8f8f8, #e8e8e8);
+            border-radius: 10px;
+            border: 2px solid #333;
+            box-shadow: 0 3px 0 #333;
+            transition: all 0.1s;
+        }
+        
+        .checkbox-group label:active {
+            transform: translateY(3px);
+            box-shadow: 0 0 0 #333;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            margin-right: 8px;
+            width: 18px;
+            height: 18px;
         }
         
         @media (max-width: 600px) {
@@ -165,7 +208,8 @@
             transition: all 0.1s;
             font-family: 'Bangers', cursive;
             letter-spacing: 1px;
-            margin-left: 20px;
+            margin: 15px auto;
+            display: block;
             position: relative;
             overflow: hidden;
             -webkit-tap-highlight-color: transparent;
@@ -450,6 +494,61 @@
                 font-size: 1.4em;
             }
         }
+        
+        /* Card selection styles */
+        .card.selectable {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .card.selectable:hover {
+            transform: translateY(-10px) !important;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card.selected {
+            border: 3px solid gold;
+            box-shadow: 0 0 15px gold;
+        }
+        
+        /* Card selection panel */
+        .selection-panel {
+            display: none;
+            margin: 15px auto;
+            padding: 10px;
+            background: linear-gradient(to bottom, #f8f8f8, #e8e8e8);
+            border-radius: 10px;
+            border: 2px solid #333;
+            max-width: 90%;
+        }
+        
+        .selection-panel.active {
+            display: block;
+            animation: fadeIn 0.3s forwards;
+        }
+        
+        .selection-panel button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            font-family: 'Comic Neue', cursive;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 3px 0 #2E7D32;
+        }
+        
+        .selection-panel button:active {
+            transform: translateY(3px);
+            box-shadow: none;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
@@ -462,13 +561,28 @@
                 <input type="number" id="draws" min="4" max="8" value="4" readonly>
                 <button class="draw-btn" onclick="incrementDraws()">+</button>
             </div>
-            <button class="draw-button" onclick="calculateSuccess()">DRAW CARDS!</button>
+        </div>
+        <div class="checkbox-group">
+            <label><input type="checkbox" id="advantage" onclick="toggleAdvDisadv('advantage')"> Advantage</label>
+            <label><input type="checkbox" id="disadvantage" onclick="toggleAdvDisadv('disadvantage')"> Disadvantage</label>
+        </div>
+        <button class="draw-button" onclick="calculateSuccess()">DRAW CARDS!</button>
+        <div id="selectionPanel" class="selection-panel">
+            <p>Select <span id="selectionCount">0</span>/2 cards to drop</p>
+            <button onclick="confirmCardSelection()">Confirm Selection</button>
         </div>
         <div class="cards-container" id="cardsContainer"></div>
         <div class="result" id="result">Ready to draw? Let's go!</div>
     </div>
 
     <script>
+        // Global variables to track card selection
+        let selectedCards = [];
+        let cardsToSelect = 0;
+        let isSelectingCards = false;
+        let originalCards = [];
+        let finalCards = [];
+        
         function incrementDraws() {
             let draws = parseInt(document.getElementById("draws").value);
             if (draws < 8) {
@@ -481,6 +595,60 @@
             if (draws > 4) {
                 document.getElementById("draws").value = draws - 1;
             }
+        }
+
+        function toggleAdvDisadv(type) {
+            if (type === 'advantage') {
+                document.getElementById("disadvantage").checked = false;
+            } else {
+                document.getElementById("advantage").checked = false;
+            }
+        }
+
+        function handleCardSelection(cardDiv, index) {
+            if (!isSelectingCards) return;
+            
+            // Toggle selection
+            if (selectedCards.includes(index)) {
+                // Deselect
+                selectedCards = selectedCards.filter(i => i !== index);
+                cardDiv.classList.remove('selected');
+            } else if (selectedCards.length < cardsToSelect) {
+                // Select
+                selectedCards.push(index);
+                cardDiv.classList.add('selected');
+            }
+            
+            // Update selection count
+            document.getElementById('selectionCount').textContent = selectedCards.length;
+        }
+        
+        function confirmCardSelection() {
+            if (selectedCards.length !== cardsToSelect) {
+                alert(`Please select exactly ${cardsToSelect} cards`);
+                return;
+            }
+            
+            isSelectingCards = false;
+            document.getElementById('selectionPanel').classList.remove('active');
+            
+            // Sort in descending order to avoid index shifting
+            selectedCards.sort((a, b) => b - a);
+            
+            // Remove the selected cards
+            selectedCards.forEach(index => {
+                originalCards[index].element.remove();
+                originalCards.splice(index, 1);
+            });
+            
+            // Reset for next time
+            selectedCards = [];
+            
+            // Set finalCards
+            finalCards = originalCards.map(card => card.data);
+            
+            // Calculate successes based on final cards
+            calculateSuccesses(finalCards);
         }
 
         function drawCards(numDraws) {
@@ -508,15 +676,48 @@
         }
 
         function calculateSuccess() {
+            // Reset globals
+            selectedCards = [];
+            isSelectingCards = false;
+            originalCards = [];
+            finalCards = [];
+            
+            // Get the number of draws and check for advantage/disadvantage
             let draws = parseInt(document.getElementById("draws").value);
-            let drawnCards = drawCards(draws);
+            const hasAdvantage = document.getElementById("advantage").checked;
+            const hasDisadvantage = document.getElementById("disadvantage").checked;
+            
+            // Draw cards based on advantage/disadvantage
+            let drawnCards;
+            if (hasAdvantage) {
+                // Draw extra 2 cards for advantage
+                drawnCards = drawCards(draws + 2);
+                cardsToSelect = 2;
+            } else if (hasDisadvantage) {
+                // Draw normal cards for disadvantage
+                drawnCards = drawCards(draws);
+                cardsToSelect = 2;
+            } else {
+                // Normal draw
+                drawnCards = drawCards(draws);
+            }
+            
+            // Clear the container
             document.getElementById("cardsContainer").innerHTML = "";
             document.getElementById("result").innerHTML = "Drawing cards...";
+            document.getElementById("selectionPanel").classList.remove('active');
             
+            // Display the cards
             drawnCards.forEach((card, index) => {
                 setTimeout(() => {
                     let cardDiv = document.createElement("div");
                     cardDiv.classList.add("card");
+                    
+                    // If we're in advantage or disadvantage mode, make cards selectable
+                    if (hasAdvantage || hasDisadvantage) {
+                        cardDiv.classList.add("selectable");
+                        cardDiv.onclick = () => handleCardSelection(cardDiv, index);
+                    }
                     
                     let cardValueDiv = document.createElement("div");
                     cardValueDiv.classList.add("card-value");
@@ -529,7 +730,11 @@
                         cardDiv.style.animationName = "jokerAnimation";
                         cardValueDiv.innerHTML = "Joker";
                         cardSuitDiv.innerHTML = "🃏";
-                        cardDiv.onclick = () => replaceJoker(cardDiv, drawnCards, index);
+                        
+                        // Only add joker replacement if not in selection mode
+                        if (!hasAdvantage && !hasDisadvantage) {
+                            cardDiv.onclick = () => replaceJoker(cardDiv, drawnCards, index);
+                        }
                     } else {
                         // Set color for red suits
                         if (card.suit === '♦️' || card.suit === '♥️') {
@@ -544,14 +749,35 @@
                     cardDiv.appendChild(cardSuitDiv);
                     document.getElementById("cardsContainer").appendChild(cardDiv);
                     
+                    // Store the card data and element
+                    originalCards.push({
+                        data: card,
+                        element: cardDiv
+                    });
+                    
                     // Add fun delay and staggered animation
                     cardDiv.style.animationDelay = `${index * 0.15}s`;
                 }, 200);
             });
             
-            // Calculate after all cards are shown
+            // After all cards are shown
             setTimeout(() => {
-                calculateSuccesses(drawnCards);
+                if (hasAdvantage || hasDisadvantage) {
+                    // Start card selection mode
+                    isSelectingCards = true;
+                    document.getElementById('selectionCount').textContent = "0";
+                    document.getElementById('selectionPanel').classList.add('active');
+                    
+                    // Set message based on mode
+                    if (hasAdvantage) {
+                        document.getElementById('result').innerHTML = "You have advantage! Select 2 cards to drop.";
+                    } else {
+                        document.getElementById('result').innerHTML = "You have disadvantage! Select 2 cards to drop.";
+                    }
+                } else {
+                    // Normal calculation
+                    calculateSuccesses(drawnCards);
+                }
             }, (drawnCards.length * 200) + 500);
         }
         
@@ -610,6 +836,11 @@
                     
                     // Update the drawn cards array with the new card
                     drawnCards[index] = { value: newValue, suit: newSuit, numValue: numValue };
+                    
+                    // Update the original cards array as well
+                    if (originalCards[index]) {
+                        originalCards[index].data = { value: newValue, suit: newSuit, numValue: numValue };
+                    }
                     
                     // Update card appearance with animation
                     jokerCard.style.transform = "scale(0.8) rotate(10deg)";
@@ -697,6 +928,10 @@
                 }
             });
             
+            // Log the counts for debugging - using JSON.stringify to properly display objects
+            console.log("Value counts:", JSON.stringify(valueCounts));
+            console.log("Suit counts:", JSON.stringify(suitCounts));
+            
             // Calculate value matches (separate calculation)
             Object.entries(valueCounts).forEach(([value, count]) => {
                 // Skip single cards
@@ -707,6 +942,8 @@
                 if (count === 3) valueMatches += 2;
                 if (count === 4) valueMatches += 3;
                 if (count === 5) valueMatches += 4;
+                
+                console.log(`Found ${count}× value ${value} = ${count === 2 ? 1 : count === 3 ? 2 : count === 4 ? 3 : 4} successes`);
             });
             
             // Calculate suit matches (separate calculation)
@@ -719,6 +956,8 @@
                 if (count === 3) suitMatches += 2;
                 if (count === 4) suitMatches += 3;
                 if (count === 5) suitMatches += 4;
+                
+                console.log(`Found ${count}× suit ${suit} = ${count === 2 ? 1 : count === 3 ? 2 : count === 4 ? 3 : 4} successes`);
             });
             
             // Total successes
