@@ -65,6 +65,7 @@
             position: relative;
             z-index: 1;
         }
+        
         @media (max-width: 480px) {
             h1 {
                 font-size: 2.2em;
@@ -718,10 +719,15 @@
                         cardValueDiv.innerHTML = "Joker";
                         cardSuitDiv.innerHTML = "🃏";
                         
-                        // Only add joker replacement if not in selection mode
-                        if (!hasAdvantage && !hasDisadvantage) {
-                            cardDiv.onclick = () => replaceJoker(cardDiv, drawnCards, index);
-                        }
+                        // Allow joker replacement even in selection mode
+                        // but keep the card selectable too
+                        cardDiv.onclick = function(e) {
+                            if (isSelectingCards) {
+                                handleCardSelection(cardDiv, index);
+                            } else {
+                                replaceJoker(cardDiv, drawnCards, index);
+                            }
+                        };
                     } else {
                         // Set color for red suits
                         if (card.suit === '♦️' || card.suit === '♥️') {
@@ -891,7 +897,21 @@
                         boom.classList.add("show");
                     }, 300);
                     
-                    calculateSuccesses(drawnCards);
+                    // Check if we're in advantage/disadvantage mode and there are still jokers
+                    const hasJokers = drawnCards.some(card => card.value === 'Joker');
+                    
+                    if (isSelectingCards === false && (document.getElementById("advantage").checked || document.getElementById("disadvantage").checked)) {
+                        if (!hasJokers) {
+                            // Start card selection now that all jokers are replaced
+                            startCardSelection(document.getElementById("advantage").checked);
+                        } else {
+                            // Still have jokers to replace
+                            document.getElementById('result').innerHTML = "Replace any remaining Jokers before selecting cards to drop.";
+                        }
+                    } else {
+                        // Normal calculation
+                        calculateSuccesses(drawnCards);
+                    }
                 }
             });
         }
