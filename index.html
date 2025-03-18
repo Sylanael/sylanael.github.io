@@ -553,6 +553,8 @@
         <div class="checkbox-group">
             <label><input type="checkbox" id="advantage" onclick="toggleAdvDisadv('advantage')"> Advantage</label>
             <label><input type="checkbox" id="disadvantage" onclick="toggleAdvDisadv('disadvantage')"> Disadvantage</label>
+            <label><input type="checkbox" id="magic" onclick="toggleMagic()"> Magic</label>
+
         </div>
         <button class="draw-button" onclick="calculateSuccess()">DRAW CARDS!</button>
         <div id="selectionPanel" class="selection-panel">
@@ -665,6 +667,25 @@
             return drawnCards;
         }
 
+        function toggleMagic() {
+            // Magic option can be used alongside advantage/disadvantage, so we don't need
+            // to uncheck any other options.
+            
+            // If you want to update the draw count based on magic rules when toggling:
+            const isMagicChecked = document.getElementById("magic").checked;
+            const currentDraws = parseInt(document.getElementById("draws").value);
+            
+            if (isMagicChecked) {
+                // Apply magic draw rules
+                if (currentDraws < 4) {
+                    // Non-magicians with artifact draw 4 cards minimum
+                    document.getElementById("draws").value = 4;
+                }
+                // You could automatically set to 6 for magicians here, but it's better
+                // to let the user decide their character type
+            }
+        }
+
         function calculateSuccess() {
             // Reset globals
             selectedCards = [];
@@ -673,12 +694,25 @@
             finalCards = [];
             selectionComplete = false;
             
-            // Get the number of draws and check for advantage/disadvantage
+            // Get the number of draws and check for options
             let draws = parseInt(document.getElementById("draws").value);
             const hasAdvantage = document.getElementById("advantage").checked;
             const hasDisadvantage = document.getElementById("disadvantage").checked;
+            const hasMagic = document.getElementById("magic").checked;
             
-            // Draw cards based on advantage/disadvantage
+            // Adjust draws based on magic rules if the magic checkbox is checked
+            if (hasMagic) {
+                // Override the draw count for magic scenarios
+                if (document.getElementById("draws").value < 6) {
+                    // Non-magicians with artifact draw 4 cards minimum
+                    draws = Math.max(draws, 4);
+                } else {
+                    // Magicians draw 6 cards
+                    draws = 6;
+                }
+            }
+            
+            // Draw cards based on conditions
             let drawnCards;
             if (hasAdvantage) {
                 // Draw extra 2 cards for advantage
@@ -783,6 +817,7 @@
                     calculateSuccesses(drawnCards);
                 }
             }, (drawnCards.length * 200) + 500);
+
         }
         
         function replaceJoker(jokerCard, index) {
@@ -1029,6 +1064,49 @@
                     </div>
                 </div>
             `;
+
+            const hasMagic = document.getElementById("magic").checked;
+            if (hasMagic) {
+                // Get unique suits and analyze spell effects
+                const uniqueSuits = [...new Set(cards.filter(card => card.value !== 'Joker').map(card => card.suit))];
+                let spellEffects = [];
+                
+                // Check for suit effects
+                if (uniqueSuits.includes('♥️')) spellEffects.push("Affects emotions, charm, or healing");
+                if (uniqueSuits.includes('♠️')) spellEffects.push("Causes destruction, bad luck, or debuffs");
+                if (uniqueSuits.includes('♦️')) spellEffects.push("Creates or alters reality");
+                if (uniqueSuits.includes('♣️')) spellEffects.push("Affects movement, speed, or physicality");
+                
+                // Check for face card effects
+                const hasJack = cards.some(card => card.value === 'J');
+                const hasQueen = cards.some(card => card.value === 'Q');
+                const hasKing = cards.some(card => card.value === 'K');
+                const hasAce = cards.some(card => card.value === 'A');
+                
+                // Add face card effects
+                if (hasJack) spellEffects.push("Spell swaps targets");
+                if (hasQueen) spellEffects.push("Spell affects a wider area");
+                if (hasKing) spellEffects.push("Spell ignores laws of reality");
+                if (hasAce) spellEffects.push("Wild card - pick any effect with a GM twist");
+                
+                // Add joker effects
+                if (cards.some(card => card.value === 'Joker')) {
+                    spellEffects.push("Spell backfires unpredictably!");
+                }
+                
+                // Add to the HTML display
+                let magicHTML = `
+                    <div class="magic-results">
+                        <h3>Spell Effects</h3>
+                        <ul>
+                            ${spellEffects.map(effect => `<li>${effect}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+                
+                // Append to the result div
+                document.getElementById("result").innerHTML += magicHTML;
+            }
         }
     </script>
 </body>
