@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mayhemarchy Calculator</title>
+    <title>SLAP Draws Calculator</title>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
     <style>
@@ -55,6 +55,9 @@
             transform: rotate(45deg);
             z-index: 0;
         }
+        ul {
+            text-align: left;
+        }
         h1 {
             font-family: 'Bangers', cursive;
             color: #ff5722;
@@ -65,9 +68,7 @@
             position: relative;
             z-index: 1;
         }
-        ul {
-            text-align: left;
-        }
+        
         @media (max-width: 480px) {
             h1 {
                 font-size: 2.2em;
@@ -157,6 +158,22 @@
         .draw-btn:active {
             transform: translateY(4px);
             box-shadow: 0 0 0 #2E7D32;
+        }
+        .magic-effect-box {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            font-size: 1.1em;
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+        }
+
+        .tie-option:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+            transition: all 0.2s;
         }
         
         @media (max-width: 480px) {
@@ -1057,45 +1074,171 @@
 
             const hasMagic = document.getElementById("magic").checked;
             if (hasMagic) {
-                // Get unique suits and analyze spell effects
-                const uniqueSuits = [...new Set(cards.filter(card => card.value !== 'Joker').map(card => card.suit))];
-                let spellEffects = [];
-                
-                // Check for suit effects
-                if (uniqueSuits.includes('♥️')) spellEffects.push("Affects emotions, charm, or healing");
-                if (uniqueSuits.includes('♠️')) spellEffects.push("Causes destruction, bad luck, or debuffs");
-                if (uniqueSuits.includes('♦️')) spellEffects.push("Creates or alters reality");
-                if (uniqueSuits.includes('♣️')) spellEffects.push("Affects movement, speed, or physicality");
-                
-                // Check for face card effects
-                const hasJack = cards.some(card => card.value === 'J');
-                const hasQueen = cards.some(card => card.value === 'Q');
-                const hasKing = cards.some(card => card.value === 'K');
-                const hasAce = cards.some(card => card.value === 'A');
-                
-                // Add face card effects
-                if (hasJack) spellEffects.push("Spell swaps targets");
-                if (hasQueen) spellEffects.push("Spell affects a wider area");
-                if (hasKing) spellEffects.push("Spell ignores laws of reality");
-                if (hasAce) spellEffects.push("Wild card - pick any effect with a GM twist");
-                
-                // Add joker effects
-                if (cards.some(card => card.value === 'Joker')) {
-                    spellEffects.push("Spell backfires unpredictably!");
+                // Check if there's a tie for highest card
+                if (checkForHighCardTie(cards)) {
+                    handleHighCardTie(cards);
+                } else {
+                    // Get the highest card and display its effect
+                    const highestCard = getHighestCard(cards);
+                    displayMagicEffect(highestCard);
                 }
+            }
+        }
+
+        // Function to determine the highest card
+        function getHighestCard(cards) {
+            // Filter out Jokers and sort by numValue in descending order
+            const sortedCards = cards.filter(card => card.value !== 'Joker')
+                .sort((a, b) => b.numValue - a.numValue);
+            
+            // Return the highest card (first in the sorted array)
+            return sortedCards.length > 0 ? sortedCards[0] : null;
+        }
+
+        function selectHighCard(index) {
+            // Close the dialog
+            Swal.close();
+            
+            // Get the selected card from the stored array
+            const selectedCard = window.tieHighCards[index];
+            
+            // Display the magic effect for the selected card
+            displayMagicEffect(selectedCard);
+        }
+
+        // Function to determine if there's a tie for highest card
+        function checkForHighCardTie(cards) {
+            // Filter out Jokers
+            const nonJokerCards = cards.filter(card => card.value !== 'Joker');
+            
+            // If there are no cards, return false
+            if (nonJokerCards.length === 0) return false;
+            
+            // Find the highest numValue
+            const highestValue = Math.max(...nonJokerCards.map(card => card.numValue));
+            
+            // Find all cards with the highest value
+            const highestCards = nonJokerCards.filter(card => card.numValue === highestValue);
+            
+            // Return true if there's more than one card with the highest value
+            return highestCards.length > 1;
+        }
+
+        // Function to handle the tie-breaking choice
+        function handleHighCardTie(cards) {
+            // Filter out Jokers and find highest cards
+            const nonJokerCards = cards.filter(card => card.value !== 'Joker');
+            const highestValue = Math.max(...nonJokerCards.map(card => card.numValue));
+            const highestCards = nonJokerCards.filter(card => card.numValue === highestValue);
+            
+            // Store the high cards in a global variable for access in the selection function
+            window.tieHighCards = highestCards;
+            
+            // Create buttons for each high card
+            let buttonsHTML = '';
+            highestCards.forEach((card, index) => {
+                let cardDisplay = card.value;
+                if (card.value === 'J') cardDisplay = 'Jack';
+                else if (card.value === 'Q') cardDisplay = 'Queen';
+                else if (card.value === 'K') cardDisplay = 'King';
+                else if (card.value === 'A') cardDisplay = 'Ace';
                 
-                // Add to the HTML display
-                let magicHTML = `
-                    <div class="magic-results">
-                        <h3>Spell Effects</h3>
-                        <ul>
-                            ${spellEffects.map(effect => `<li>${effect}</li>`).join('')}
-                        </ul>
-                    </div>
+                buttonsHTML += `
+                    <button 
+                        type="button" 
+                        class="swal2-confirm swal2-styled" 
+                        style="display: inline-block; margin: 5px; min-width: 120px; background-color: #4CAF50;"
+                        onclick="selectHighCard(${index})"
+                    >
+                        ${card.value} ${card.suit}<br>
+                        <small>${cardDisplay} of ${getFullSuitName(card.suit)}</small>
+                    </button>
                 `;
-                
-                // Append to the result div
-                document.getElementById("result").innerHTML += magicHTML;
+            });
+            
+            // Show the selection dialog with proper buttons
+            Swal.fire({
+                title: 'Tie for Highest Card!',
+                html: `
+                    <div style="font-family: 'Comic Neue', cursive; font-size: 1.2em;">
+                        <p>Select which card to use for the magic effect:</p>
+                        <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">
+                            ${buttonsHTML}
+                        </div>
+                    </div>
+                `,
+                showConfirmButton: false,
+                showCancelButton: false,
+                background: '#ffffff'
+            });
+        }
+
+        // Helper function to get full suit name
+        function getFullSuitName(suitSymbol) {
+            switch(suitSymbol) {
+                case '♠️': return 'Spades';
+                case '♦️': return 'Diamonds';
+                case '♣️': return 'Clubs';
+                case '♥️': return 'Hearts';
+                default: return suitSymbol;
+            }
+        }
+
+        // Function to determine and display the magic effect based on highest card
+        function displayMagicEffect(highestCard) {
+            let effect = "No magical effect determined";
+            
+            // If no valid card is found
+            if (!highestCard) {
+                document.getElementById("magicEffect").innerHTML = effect;
+                return;
+            }
+            
+            // Determine effect based on suit
+            if (highestCard.suit === '♥️') {
+                effect = "Hearts: Affects emotions, charm, or healing";
+            } else if (highestCard.suit === '♠️') {
+                effect = "Spades: Causes destruction, bad luck, or debuffs";
+            } else if (highestCard.suit === '♦️') {
+                effect = "Diamonds: Creates or alters reality";
+            } else if (highestCard.suit === '♣️') {
+                effect = "Clubs: Affects movement, speed, or physicality";
+            }
+            
+            // Add special effects for face cards
+            let additionalEffect = "";
+            if (highestCard.value === 'J') {
+                additionalEffect = "Jack: Spell swaps targets";
+            } else if (highestCard.value === 'Q') {
+                additionalEffect = "Queen: Spell affects a wider area";
+            } else if (highestCard.value === 'K') {
+                additionalEffect = "King: Spell ignores laws of reality";
+            } else if (highestCard.value === 'A') {
+                additionalEffect = "Ace: Wild card - pick any effect with a GM twist";
+            }
+            
+            // Update the result div to show the magic effect
+            if (additionalEffect) {
+                effect += ` + ${additionalEffect}`;
+            }
+            
+            // Add to the HTML display
+            let magicHTML = `
+                <div class="magic-results">
+                    <h3>Magic Effect (Highest Card: ${highestCard.value}${highestCard.suit})</h3>
+                    <div class="magic-effect-box">
+                        ${effect}
+                    </div>
+                </div>
+            `;
+            
+            // Add or update the magic effect section
+            const magicEffectDiv = document.getElementById("magicEffect");
+            if (magicEffectDiv) {
+                magicEffectDiv.innerHTML = magicHTML;
+            } else {
+                // If div doesn't exist, append to result
+                document.getElementById("result").innerHTML += `<div id="magicEffect">${magicHTML}</div>`;
             }
         }
     </script>
