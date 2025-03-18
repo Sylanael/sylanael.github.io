@@ -570,6 +570,7 @@
         let isSelectingCards = false;
         let originalCards = [];
         let finalCards = [];
+        let selectionComplete = false;
         
         function incrementDraws() {
             let draws = parseInt(document.getElementById("draws").value);
@@ -618,6 +619,7 @@
             }
             
             isSelectingCards = false;
+            selectionComplete = true;
             document.getElementById('selectionPanel').classList.remove('active');
             
             // Sort in descending order to avoid index shifting
@@ -669,6 +671,7 @@
             isSelectingCards = false;
             originalCards = [];
             finalCards = [];
+            selectionComplete = false;
             
             // Get the number of draws and check for advantage/disadvantage
             let draws = parseInt(document.getElementById("draws").value);
@@ -700,11 +703,11 @@
                 setTimeout(() => {
                     let cardDiv = document.createElement("div");
                     cardDiv.classList.add("card");
+                    cardDiv.setAttribute('data-index', index);
                     
                     // If we're in advantage or disadvantage mode, make cards selectable
                     if (hasAdvantage || hasDisadvantage) {
                         cardDiv.classList.add("selectable");
-                        cardDiv.onclick = () => handleCardSelection(cardDiv, index);
                     }
                     
                     let cardValueDiv = document.createElement("div");
@@ -719,13 +722,15 @@
                         cardValueDiv.innerHTML = "Joker";
                         cardSuitDiv.innerHTML = "🃏";
                         
-                        // Allow joker replacement even in selection mode
-                        // but keep the card selectable too
-                        cardDiv.onclick = function(e) {
+                        // Set a specific data attribute for joker identification
+                        cardDiv.setAttribute('data-joker', 'true');
+                        
+                        // Create a separate handler for joker replacement
+                        cardDiv.onclick = function() {
                             if (isSelectingCards) {
                                 handleCardSelection(cardDiv, index);
                             } else {
-                                replaceJoker(cardDiv, drawnCards, index);
+                                replaceJoker(cardDiv, index);
                             }
                         };
                     } else {
@@ -736,6 +741,13 @@
                         }
                         cardValueDiv.innerHTML = card.value;
                         cardSuitDiv.innerHTML = card.suit;
+                        
+                        // Add card selection click handler
+                        cardDiv.onclick = function() {
+                            if (isSelectingCards) {
+                                handleCardSelection(cardDiv, index);
+                            }
+                        };
                     }
                     
                     cardDiv.appendChild(cardValueDiv);
@@ -756,16 +768,15 @@
             // After all cards are shown
             setTimeout(() => {
                 if (hasAdvantage || hasDisadvantage) {
-                    // Start card selection mode
-                    isSelectingCards = true;
-                    document.getElementById('selectionCount').textContent = "0";
-                    document.getElementById('selectionPanel').classList.add('active');
+                    // Check for jokers first
+                    const hasJokers = drawnCards.some(card => card.value === 'Joker');
                     
-                    // Set message based on mode
-                    if (hasAdvantage) {
-                        document.getElementById('result').innerHTML = "You have advantage! Select 2 cards to drop.";
+                    if (hasJokers) {
+                        document.getElementById('result').innerHTML = "Replace any Jokers first, then select cards to drop.";
+                        // Don't start selection mode yet
+                        isSelectingCards = false;
                     } else {
-                        document.getElementById('result').innerHTML = "You have disadvantage! Select 2 cards to drop.";
+                        startCardSelection(hasAdvantage);
                     }
                 } else {
                     // Normal calculation
@@ -774,7 +785,7 @@
             }, (drawnCards.length * 200) + 500);
         }
         
-        function replaceJoker(jokerCard, drawnCards, index) {
+        function replaceJoker(jokerCard, index) {
             Swal.fire({
                 title: 'Replace Joker Card',
                 html: `
@@ -827,13 +838,11 @@
                     else if (newValue === 'A') numValue = 14;
                     else numValue = parseInt(newValue);
                     
-                    // Update the drawn cards array with the new card
-                    drawnCards[index] = { value: newValue, suit: newSuit, numValue: numValue };
+                    // Create the new card data
+                    const newCard = { value: newValue, suit: newSuit, numValue: numValue };
                     
-                    // Update the original cards array as well
-                    if (originalCards[index]) {
-                        originalCards[index].data = { value: newValue, suit: newSuit, numValue: numValue };
-                    }
+                    // Update the original cards array
+                    originalCards[index].data = newCard;
                     
                     // Update card appearance with animation
                     jokerCard.style.transform = "scale(0.8) rotate(10deg)";
@@ -844,6 +853,7 @@
                         jokerCard.classList.remove("joker");
                         jokerCard.classList.add("replaced");
                         jokerCard.innerHTML = "";
+                        jokerCard.removeAttribute('data-joker');
                         
                         // Create the new card contents
                         let cardValueDiv = document.createElement("div");
@@ -897,26 +907,48 @@
                         boom.classList.add("show");
                     }, 300);
                     
-                    // Check if we're in advantage/disadvantage mode and there are still jokers
-                    const hasJokers = drawnCards.some(card => card.value === 'Joker');
+                    // Check if we're in advantage/disadvantage mode
+                    const hasAdvOrDisadv = document.getElementById("advantage").checked || document.getElementById("disadvantage").checked;
                     
-                    if (isSelectingCards === false && (document.getElementById("advantage").checked || document.getElementById("disadvantage").checked)) {
-                        if (!hasJokers) {
-                            // Start card selection now that all jokers are replaced
+                    // Check if all jokers are replaced
+                    const hasJokers = originalCards.some(card => card.data.value === 'Joker');
+                    
+                    if (hasAdvOrDisadv) {
+                        if (selectionComplete) {
+                            // If selection is already complete, calculate with final cards
+                            // Update finalCards with the latest joker replacement
+                            finalCards = originalCards.map(card => card.data);
+                            calculateSuccesses(finalCards);
+                        } else if (!hasJokers) {
+                            // All jokers replaced, but selection not complete
                             startCardSelection(document.getElementById("advantage").checked);
                         } else {
                             // Still have jokers to replace
                             document.getElementById('result').innerHTML = "Replace any remaining Jokers before selecting cards to drop.";
                         }
                     } else {
-                        // Normal calculation
-                        calculateSuccesses(drawnCards);
+                        // Calculate with updated cards for normal mode
+                        calculateSuccesses(originalCards.map(card => card.data));
                     }
                 }
             });
         }
+        
+        function startCardSelection(isAdvantage) {
+            // Start card selection mode
+            isSelectingCards = true;
+            document.getElementById('selectionCount').textContent = "0";
+            document.getElementById('selectionPanel').classList.add('active');
+            
+            // Set message based on mode
+            if (isAdvantage) {
+                document.getElementById('result').innerHTML = "You have advantage! Select 2 cards to drop.";
+            } else {
+                document.getElementById('result').innerHTML = "You have disadvantage! Select 2 cards to drop.";
+            }
+        }
 
-        function calculateSuccesses(drawnCards) {
+        function calculateSuccesses(cards) {
             // Create separate counters
             let valueCounts = {};
             let suitCounts = {};
@@ -926,7 +958,7 @@
             let suitMatches = 0;
             
             // First just count occurrences
-            drawnCards.forEach(card => {
+            cards.forEach(card => {
                 if (card.value !== 'Joker') {
                     // Use numeric value for calculation
                     let calcValue = card.numValue || card.value;
@@ -935,9 +967,10 @@
                 }
             });
             
-            // Log the counts for debugging - using JSON.stringify to properly display objects
-            console.log("Value counts:", JSON.stringify(valueCounts));
-            console.log("Suit counts:", JSON.stringify(suitCounts));
+            // Log the counts for debugging
+            console.log("Current cards:", cards);
+            console.log("Value counts:", valueCounts);
+            console.log("Suit counts:", suitCounts);
             
             // Calculate value matches (separate calculation)
             Object.entries(valueCounts).forEach(([value, count]) => {
