@@ -702,18 +702,6 @@
             const hasDisadvantage = document.getElementById("disadvantage").checked;
             const hasMagic = document.getElementById("magic").checked;
             
-            // Adjust draws based on magic rules if the magic checkbox is checked
-            if (hasMagic) {
-                // Override the draw count for magic scenarios
-                if (document.getElementById("draws").value < 6) {
-                    // Non-magicians with artifact draw 4 cards minimum
-                    draws = Math.max(draws, 4);
-                } else {
-                    // Magicians draw 6 cards
-                    draws = 6;
-                }
-            }
-            
             // Draw cards based on conditions
             let drawnCards;
             if (hasAdvantage) {
