@@ -694,13 +694,13 @@ function calculateSuccess() {
     originalCards = [];
     finalCards = [];
     selectionComplete = false;
-    
+
     // Get the number of draws and check for options
     let draws = parseInt(document.getElementById("draws").value);
     const hasAdvantage = document.getElementById("advantage").checked;
     const hasDisadvantage = document.getElementById("disadvantage").checked;
     const hasMagic = document.getElementById("magic").checked;
-    
+
     // Draw cards based on conditions
     let drawnCards;
     if (hasAdvantage) {
@@ -712,51 +712,43 @@ function calculateSuccess() {
     } else {
         drawnCards = drawCards(draws);
     }
-    
+
     // Clear the container
     document.getElementById("cardsContainer").innerHTML = "";
     document.getElementById("result").innerHTML = "Drawing cards...";
     document.getElementById("selectionPanel").classList.remove('active');
-    
+
     // Display cards with animation
     drawnCards.forEach((card, index) => {
         let cardDiv = document.createElement("div");
         cardDiv.classList.add("card");
         cardDiv.setAttribute('data-index', index);
-        
+
         if (hasAdvantage || hasDisadvantage) {
             cardDiv.classList.add("selectable");
         }
-        
+
         let cardValueDiv = document.createElement("div");
         cardValueDiv.classList.add("card-value");
-        
+
         let cardSuitDiv = document.createElement("div");
         cardSuitDiv.classList.add("card-suit");
-        
+
         if (card.value === 'Joker') {
             // Enhanced Joker styling
             cardDiv.classList.add("joker");
             cardValueDiv.innerHTML = "JOKER";
             cardSuitDiv.innerHTML = "🃏";
-            
+
             // Set a specific data attribute for joker identification
             cardDiv.setAttribute('data-joker', 'true');
-            
+
             // Add explicit click handling (making sure it overrides any other handlers)
             cardDiv.addEventListener('click', function(e) {
                 e.stopPropagation(); // Stop event bubbling
-                if (isSelectingCards) {
-                    handleCardSelection(cardDiv, index);
-                } else {
-                    replaceJoker(cardDiv, index);
-                }
+                replaceJoker(cardDiv, index);
             });
-            
-            // Add debug logging on hover
-            cardDiv.addEventListener('mouseover', function() {
-                console.log("Joker card hovered");
-            });
+
         } else {
             // Set color for red suits
             if (card.suit === '♦️' || card.suit === '♥️') {
@@ -765,36 +757,29 @@ function calculateSuccess() {
             }
             cardValueDiv.innerHTML = card.value;
             cardSuitDiv.innerHTML = card.suit;
-            
-            // Add card selection click handler
-            cardDiv.onclick = function() {
-                if (isSelectingCards) {
-                    handleCardSelection(cardDiv, index);
-                }
-            };
         }
-        
+
         cardDiv.appendChild(cardValueDiv);
         cardDiv.appendChild(cardSuitDiv);
         document.getElementById("cardsContainer").appendChild(cardDiv);
-        
+
         // Store the card data and element
         originalCards.push({
             data: card,
             element: cardDiv
         });
-        
+
         // Add animation delay
         cardDiv.style.animationDelay = `${index * 0.15}s`;
     });
-    
+
     // Process after cards are displayed
     setTimeout(() => {
         const jokerElements = document.querySelectorAll('#cardsContainer .card[data-joker="true"]');
         const hasJokers = jokerElements.length > 0;
-        
+
         if (hasJokers) {
-            document.getElementById('result').innerHTML = "Click on the Joker card to replace it with a regular card!";
+            document.getElementById('result').innerHTML = "Click on the Joker card to replace it!";
         } else if (hasAdvantage || hasDisadvantage) {
             startCardSelection(hasAdvantage);
         } else {
@@ -802,6 +787,7 @@ function calculateSuccess() {
         }
     }, Math.max(500, drawnCards.length * 200));
 }
+
 
 function replaceJoker(jokerCard, index) {
     Swal.fire({
