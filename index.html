@@ -554,6 +554,39 @@ let originalCards = [];
 let finalCards = [];
 let selectionComplete = false;
 
+function resetGame() {
+    // Reset number of draws to default (4)
+    document.getElementById("draws").value = 4;
+
+    // Uncheck all checkboxes (Advantage, Disadvantage, Magic)
+    document.getElementById("advantage").checked = false;
+    document.getElementById("disadvantage").checked = false;
+    document.getElementById("magic").checked = false;
+
+    // Clear the drawn cards display
+    document.getElementById("cardsContainer").innerHTML = "";
+
+    // Reset the result text
+    document.getElementById("result").innerHTML = "Ready to draw? Let's go!";
+
+    // Remove any magic effect display
+    const magicEffectDiv = document.getElementById("magicEffect");
+    if (magicEffectDiv) {
+        magicEffectDiv.remove();
+    }
+
+    // Hide the card selection panel if active
+    document.getElementById("selectionPanel").classList.remove('active');
+
+    // Reset global tracking variables
+    selectedCards = [];
+    isSelectingCards = false;
+    originalCards = [];
+    finalCards = [];
+    selectionComplete = false;
+}
+
+
 function incrementDraws() {
     let draws = parseInt(document.getElementById("draws").value);
     if (draws < 8) {
