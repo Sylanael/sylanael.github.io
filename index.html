@@ -876,26 +876,51 @@ function replaceJoker(jokerCard, index) {
             // Add the new content
             jokerCard.appendChild(cardValueDiv);
             jokerCard.appendChild(cardSuitDiv);
-            
-            // Recalculate successes
-            calculateSuccesses(originalCards.map(card => card.data));
+
+            // Check if all Jokers are replaced
+            setTimeout(() => {
+                const remainingJokers = document.querySelectorAll('#cardsContainer .card[data-joker="true"]');
+                if (remainingJokers.length === 0) {
+                    // If advantage or disadvantage is active, start the card selection process
+                    const hasAdvantage = document.getElementById("advantage").checked;
+                    const hasDisadvantage = document.getElementById("disadvantage").checked;
+
+                    if (hasAdvantage || hasDisadvantage) {
+                        startCardSelection(hasAdvantage);
+                    } else {
+                        // Otherwise, calculate the final result
+                        calculateSuccesses(originalCards.map(card => card.data));
+                    }
+                }
+            }, 500);
         }
     });
 }
 
+
 function startCardSelection(isAdvantage) {
     // Start card selection mode
     isSelectingCards = true;
+    selectedCards = [];
+    
+    // Update UI
     document.getElementById('selectionCount').textContent = "0";
     document.getElementById('selectionPanel').classList.add('active');
-    
+
     // Set message based on mode
     if (isAdvantage) {
         document.getElementById('result').innerHTML = "You have advantage! Select 2 cards to drop.";
     } else {
         document.getElementById('result').innerHTML = "You have disadvantage! Select 2 cards to drop.";
     }
+
+    // Re-attach click event listeners to cards
+    document.querySelectorAll('.card').forEach((card, index) => {
+        card.classList.add('selectable'); // Make sure it visually indicates selection
+        card.addEventListener('click', () => handleCardSelection(card, index));
+    });
 }
+
 
 function calculateSuccesses(cards) {
     // Create separate counters
